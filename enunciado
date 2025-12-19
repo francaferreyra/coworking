@@ -1,0 +1,152 @@
+📌 Enunciado del proyecto
+Sistema de Gestión de Reservas para un Espacio de Coworking
+
+Un espacio de coworking necesita un sistema que permita administrar usuarios, salas y reservas de forma sencilla.
+
+El sistema debe contar con:
+
+Backend en Python
+
+Base de datos relacional
+
+Frontend web básico
+
+🎯 Objetivo general
+
+Desarrollar una aplicación que permita:
+
+Registrar usuarios
+
+Crear y administrar salas
+
+Reservar salas en fechas y horarios determinados
+
+Consultar reservas existentes
+
+🧩 Requerimientos funcionales
+👤 Usuarios
+
+Cada usuario debe tener:
+
+ID
+
+Nombre
+
+Email
+
+Rol (admin o cliente)
+
+Funciones:
+
+Crear usuario
+
+Listar usuarios
+
+Eliminar usuario (solo admin)
+
+🏢 Salas
+
+Cada sala debe tener:
+
+ID
+
+Nombre
+
+Capacidad
+
+Descripción
+
+Funciones:
+
+Crear sala
+
+Listar salas
+
+Editar sala
+
+Eliminar sala
+
+📅 Reservas
+
+Cada reserva debe tener:
+
+ID
+
+Usuario
+
+Sala
+
+Fecha
+
+Hora inicio
+
+Hora fin
+
+Reglas:
+
+No se pueden superponer reservas en la misma sala
+
+Un usuario puede tener varias reservas
+
+La fecha no puede ser anterior al día actual
+
+Funciones:
+
+Crear reserva
+
+Ver reservas por sala
+
+Ver reservas por usuario
+
+Cancelar reserva
+
+🗄️ Base de datos (modelo sugerido)
+
+Tablas:
+
+usuarios
+
+salas
+
+reservas
+
+Relaciones:
+
+reservas.usuario_id → usuarios.id
+
+reservas.sala_id → salas.id
+
+⚙️ Tecnologías sugeridas
+Backend
+
+Python
+
+Flask o FastAPI
+
+ORM: SQLAlchemy
+
+Base de datos
+
+SQLite (para practicar)
+
+PostgreSQL (opcional si querés más real)
+
+Frontend
+
+HTML + CSS
+
+Templates con Jinja2
+
+Opcional: Bootstrap
+
+🖥️ Frontend mínimo esperado
+
+Formulario para crear usuarios
+
+Formulario para crear salas
+
+Formulario para hacer reservas
+
+Página para listar reservas
+
+Mensajes de error (ej: sala ocupada)
