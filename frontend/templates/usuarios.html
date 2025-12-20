@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Usuarios</title>
+
+
+</head>
+<body>
+    <h2>Crear Usuario</h2>
+
+    <form method="post" action="../main.py">
+        <input type="text" name="nombre" placeholder="Nombre" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <select name="rol">
+            <option value="admin">Admin</option>
+            <option value="cliente">Cliente</option>
+
+        </select>
+        <button type="submit">Crear Usuario</button>
+
+
+     </form>
+
+</body>
+</html>

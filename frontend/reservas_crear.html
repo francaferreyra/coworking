@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crear reserva | Coworking App</title>
+  <style>
+    :root { --bg:#000; --fg:#fff; --btn-bg:#fff; --btn-fg:#000; --btn-bg-hover:#eaeaea; }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    .container{ min-height:100dvh; display:flex; justify-content:center; align-items:flex-start; padding:24px; }
+    .card{ width:min(1000px,100%); }
+    header{ display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+    h1{ font-size: clamp(28px, 5vw, 48px); margin:0; }
+    .btn{ appearance:none; display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:10px; background:var(--btn-bg); color:var(--btn-fg); text-decoration:none; font-weight:700; box-shadow: 0 8px 20px rgba(255,255,255,.08); }
+    .btn:hover{ background:var(--btn-bg-hover); }
+
+    .form{ max-width: 1000px; }
+    .fields{ display:grid; gap:12px; }
+    .fields.two{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .label{ display:block; font-weight:700; margin:0 0 6px; color:#e6e6e6; }
+    .input{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid #2a2a2a; background:#0d0d0d; color:#fff; }
+    .input:focus{ outline:3px solid #3b3b3b; outline-offset:2px; }
+    .actions{ margin-top:14px; }
+
+    .notice{ margin-top:12px; padding:12px 14px; border-radius:12px; font-weight:700; display:none; }
+    .notice--ok{ display:block; background:#0f5132; color:#d1fadf; border:1px solid #145a3b; }
+    .notice--err{ display:block; background:#5c1a1a; color:#ffd6d6; border:1px solid #7a2b2b; }
+
+    /* Encabezado con logo + título animado */
+    .site-header{ display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+    .brand{ display:flex; align-items:center; gap:14px; }
+    .logo{ filter: drop-shadow(0 4px 12px rgba(255,255,255,0.12)); }
+    .title-animated{
+      margin:0; font-size: clamp(28px, 6vw, 52px); font-weight:800; letter-spacing:.5px;
+      background: linear-gradient(90deg,#fff,#dcdcdc); -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation: glow 3s ease-in-out infinite, slideIn .6s ease both;
+    }
+    @keyframes glow{ 0%{ text-shadow:0 0 0 rgba(255,255,255,0); } 50%{ text-shadow:0 0 18px rgba(255,255,255,.25);} 100%{ text-shadow:0 0 0 rgba(255,255,255,0);} }
+    @keyframes slideIn{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform: translateY(0);} }
+    .site-nav .btn{ margin-left:8px; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="card" aria-label="Crear reserva">
+      <header class="site-header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 64 64" width="40" height="40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo Coworking">
+              <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="100%" stop-color="#cfcfcf"/>
+                </linearGradient>
+              </defs>
+              <rect x="4" y="20" width="24" height="24" rx="4" fill="url(#g)" />
+              <rect x="36" y="20" width="24" height="24" rx="4" fill="url(#g)" />
+              <circle cx="16" cy="16" r="3" fill="#fff"/>
+              <circle cx="48" cy="16" r="3" fill="#fff"/>
+              <path d="M28 32h8" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h1 class="title-animated">Crear reserva</h1>
+        </div>
+        <nav class="site-nav">
+          <a class="btn" href="reservas.html">Volver al listado</a>
+        </nav>
+      </header>
+
+      <form id="form-reserva" class="form">
+        <div class="fields two">
+          <div class="field">
+            <label class="label" for="r-fecha">Fecha</label>
+            <input class="input" id="r-fecha" name="fecha" type="date" required />
+          </div>
+          <div class="field">
+            <label class="label" for="r-inicio">Hora inicio</label>
+            <input class="input" id="r-inicio" name="hora_inicio" type="time" required />
+          </div>
+          <div class="field">
+            <label class="label" for="r-fin">Hora fin</label>
+            <input class="input" id="r-fin" name="hora_fin" type="time" required />
+          </div>
+          <div class="field">
+            <label class="label" for="r-uid">Usuario ID</label>
+            <input class="input" id="r-uid" name="usuario_id" type="number" min="1" required placeholder="1" />
+          </div>
+          <div class="field">
+            <label class="label" for="r-sid">Sala ID</label>
+            <input class="input" id="r-sid" name="sala_id" type="number" min="1" required placeholder="1" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" type="submit">Crear</button>
+        </div>
+      </form>
+      <div id="reserva-notice" class="notice" role="alert" aria-live="polite"></div>
+    </section>
+  </main>
+  <script>
+    async function crearReserva(payload){
+      const r = await fetch('/api/reservas',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      return r.json().then(data=>({ ok:r.ok, data }));
+    }
+
+    const notice = document.getElementById('reserva-notice');
+    function showNotice(ok, text){
+      notice.textContent = text;
+      notice.className = 'notice ' + (ok ? 'notice--ok' : 'notice--err');
+    }
+
+    document.getElementById('form-reserva').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const payload = Object.fromEntries(fd.entries());
+      notice.textContent = 'Creando...';
+      notice.className = 'notice notice--ok';
+      const { ok, data } = await crearReserva(payload);
+      if(ok){
+        showNotice(true, 'Reserva creada');
+        e.currentTarget.reset();
+      }else{
+        showNotice(false, data?.error || 'Error creando reserva');
+      }
+    });
+  </script>
+</body>
+</html>

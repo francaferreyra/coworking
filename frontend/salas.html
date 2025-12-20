@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Salas | Coworking App</title>
+  <style>
+    :root { --bg:#000; --fg:#fff; --btn-bg:#fff; --btn-fg:#000; --btn-bg-hover:#eaeaea; }
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    .container{ min-height: 100dvh; display:flex; justify-content:center; align-items:flex-start; padding:24px; }
+    .card{ width:min(1200px,100%); }
+    header{ display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+    h1{ font-size: clamp(28px, 5vw, 48px); margin:0; }
+    .btn{ appearance:none; display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:10px; background:var(--btn-bg); color:var(--btn-fg); text-decoration:none; font-weight:700; box-shadow: 0 8px 20px rgba(255,255,255,.08); }
+    .btn:hover{ background:var(--btn-bg-hover); }
+    .grid{ display:grid; gap:20px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    .tile{ background:#0f0f0f; border:1px solid #1b1b1b; border-radius:14px; padding:18px; }
+    .tile h3{ margin:0 0 8px 0; }
+    .tile--list{ grid-column: 1 / -1; min-height: 420px; }
+    .muted{ color:#bdbdbd; }
+  /* Form & notices */
+  .form{ max-width: 900px; }
+  .fields{ display:grid; gap:12px; }
+  .fields.two{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .field{}
+  .label{ display:block; font-weight:700; margin:0 0 6px; color:#e6e6e6; }
+  .input{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid #2a2a2a; background:#0d0d0d; color:#fff; }
+  .input:focus{ outline:3px solid #3b3b3b; outline-offset:2px; }
+  .actions{ margin-top:14px; }
+
+  .notice{ margin-top:12px; padding:12px 14px; border-radius:12px; font-weight:700; display:none; }
+  .notice--ok{ display:block; background:#0f5132; color:#d1fadf; border:1px solid #145a3b; }
+  .notice--err{ display:block; background:#5c1a1a; color:#ffd6d6; border:1px solid #7a2b2b; }
+  .btn.btn--danger{ background:#fff; color:#000; border:2px solid #ff4d4d; border-radius:999px; padding:10px 14px; display:inline-flex; align-items:center; gap:8px; }
+  .btn.btn--danger:hover{ background:#ffe9e9; transform: translateY(-1px); }
+  .btn .icon{ display:inline-block; width:16px; height:16px; }
+  .btn .icon svg{ display:block; width:16px; height:16px; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="card" aria-label="Salas">
+      <header>
+        <h1>Salas</h1>
+        <nav>
+          <a class="btn" href="index.html">Volver al inicio</a>
+          <a class="btn" href="salas_crear.html" style="margin-left:8px">Crear sala</a>
+        </nav>
+      </header>
+      <p class="muted">Administra las salas disponibles para reservas.</p>
+      <div id="sala-notice" class="notice" role="alert" aria-live="polite"></div>
+      <div class="grid">
+        <article class="tile tile--list">
+          <h3>Listado de salas</h3>
+          <div id="salas-lista" class="muted">Cargando...</div>
+        </article>
+        </div>
+    </section>
+  </main>
+  <script>
+    const api = {
+      async getSalas(){
+        const r = await fetch('/api/salas');
+        if(!r.ok) throw new Error('Error listando salas');
+        return r.json();
+      },
+      async crearSala(payload){
+        const r = await fetch('/api/salas',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        return r.json().then(data=>({ ok:r.ok, data }));
+      }
+    };
+
+    function renderSalas(items){
+      const cont = document.getElementById('salas-lista');
+      if(!items.length){ cont.innerHTML = '<span class="muted">Sin salas.</span>'; return; }
+      const rows = items.map(s=>`<tr>
+        <td style="padding:10px 16px;">${s.id}</td>
+        <td style="padding:10px 16px;">${s.nombre}</td>
+        <td style="padding:10px 16px;">${s.capacidad}</td>
+        <td style="padding:10px 16px;">${s.descripcion ?? ''}</td>
+        <td style="padding:10px 16px; width:1%; white-space:nowrap">
+          <button class="btn btn--danger" data-del-sala="${s.id}" title="Borrar sala">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6h18" stroke="#ff4d4d" stroke-width="2" stroke-linecap="round"/>
+                <path d="M19 6l-1.2 14.4a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6L5 6" stroke="#ff4d4d" stroke-width="1.5"/>
+                <path d="M9 6V4.8A1.8 1.8 0 0 1 10.8 3h2.4A1.8 1.8 0 0 1 15 4.8V6" stroke="#ff4d4d" stroke-width="1.5"/>
+                <path d="M10 10v7M14 10v7" stroke="#ff4d4d" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </span>
+            Borrar
+          </button>
+        </td>
+      </tr>`).join('');
+      cont.innerHTML = `<div style="overflow:auto"><table style="min-width:1000px; width:100%; border-collapse:separate; border-spacing:0 10px">\
+        <thead><tr>
+          <th style="text-align:left; padding:0 16px">ID</th>
+          <th style="text-align:left; padding:0 16px">Nombre</th>
+          <th style="text-align:left; padding:0 16px">Capacidad</th>
+          <th style="text-align:left; padding:0 16px">Descripción</th>
+          <th style="text-align:left; padding:0 16px">Acciones</th>
+        </tr></thead>\
+        <tbody>${rows}</tbody></table></div>`;
+    }
+
+    async function cargar(){
+      try{
+        const salas = await api.getSalas();
+        renderSalas(salas);
+        // Bind borrar
+        document.querySelectorAll('[data-del-sala]').forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            const id = btn.getAttribute('data-del-sala');
+            const r = await fetch(`/api/salas/${id}`, { method: 'DELETE' });
+            if(r.ok){ cargar(); showNotice(true, 'Sala borrada'); }
+            else{ const data = await r.json().catch(()=>({})); showNotice(false, data?.error || 'No se pudo borrar'); }
+          });
+        });
+      }catch(e){
+        document.getElementById('salas-lista').textContent = 'Error cargando salas';
+      }
+    }
+
+    const notice = document.getElementById('sala-notice');
+    function showNotice(ok, text){
+      notice.textContent = text;
+      notice.className = 'notice ' + (ok ? 'notice--ok' : 'notice--err');
+    }
+
+    cargar();
+  </script>
+</body>
+</html>

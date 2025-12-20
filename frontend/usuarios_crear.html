@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crear usuario | Coworking App</title>
+  <style>
+    :root { --bg:#000; --fg:#fff; --btn-bg:#fff; --btn-fg:#000; --btn-bg-hover:#eaeaea; }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    .container{ min-height:100dvh; display:flex; justify-content:center; align-items:flex-start; padding:24px; }
+    .card{ width:min(900px,100%); }
+    header{ display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+    h1{ font-size: clamp(28px, 5vw, 48px); margin:0; }
+    .btn{ appearance:none; display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:10px; background:var(--btn-bg); color:var(--btn-fg); text-decoration:none; font-weight:700; box-shadow: 0 8px 20px rgba(255,255,255,.08); }
+    .btn:hover{ background:var(--btn-bg-hover); }
+
+    .form{ max-width: 900px; }
+    .fields{ display:grid; gap:12px; }
+    .fields.two{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .label{ display:block; font-weight:700; margin:0 0 6px; color:#e6e6e6; }
+    .input{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid #2a2a2a; background:#0d0d0d; color:#fff; }
+    .input:focus{ outline:3px solid #3b3b3b; outline-offset:2px; }
+    .actions{ margin-top:14px; }
+
+    .notice{ margin-top:12px; padding:12px 14px; border-radius:12px; font-weight:700; display:none; }
+    .notice--ok{ display:block; background:#0f5132; color:#d1fadf; border:1px solid #145a3b; }
+    .notice--err{ display:block; background:#5c1a1a; color:#ffd6d6; border:1px solid #7a2b2b; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="card" aria-label="Crear usuario">
+      <header>
+        <h1>Crear usuario</h1>
+        <nav>
+          <a class="btn" href="usuarios.html">Volver al listado</a>
+        </nav>
+      </header>
+
+      <form id="form-usuario" class="form">
+        <div class="fields two">
+          <div class="field">
+            <label class="label" for="u-nombre">Nombre</label>
+            <input class="input" id="u-nombre" name="nombre" required placeholder="Nombre" />
+          </div>
+          <div class="field">
+            <label class="label" for="u-email">Email</label>
+            <input class="input" id="u-email" name="email" type="email" required placeholder="email@dominio.com" />
+          </div>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <label class="label" for="u-rol">Rol</label>
+            <select class="input" id="u-rol" name="rol" required>
+              <option value="">Selecciona un rol</option>
+              <option value="admin">admin</option>
+              <option value="usuario">usuario</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" type="submit">Crear</button>
+        </div>
+      </form>
+      <div id="usuario-notice" class="notice" role="alert" aria-live="polite"></div>
+    </section>
+  </main>
+  <script>
+    async function crearUsuario(payload){
+      const r = await fetch('/api/usuarios',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      return r.json().then(data=>({ ok:r.ok, data }));
+    }
+
+    const notice = document.getElementById('usuario-notice');
+    function showNotice(ok, text){
+      notice.textContent = text;
+      notice.className = 'notice ' + (ok ? 'notice--ok' : 'notice--err');
+    }
+
+    document.getElementById('form-usuario').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const payload = Object.fromEntries(fd.entries());
+      notice.textContent = 'Creando...';
+      notice.className = 'notice notice--ok';
+      const { ok, data } = await crearUsuario(payload);
+      if(ok){
+        showNotice(true, 'Usuario creado');
+        e.currentTarget.reset();
+      }else{
+        showNotice(false, data?.error || 'Error creando usuario');
+      }
+    });
+  </script>
+</body>
+</html>
