@@ -1,6 +1,8 @@
 import os
 import json
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from openpyxl import Workbook
+from io import BytesIO
 
 from database.init_db import init_db
 from database.connection import get_connection
@@ -8,13 +10,70 @@ from database.connection import get_connection
 # Inicializa la base de datos
 init_db()
 
+def generate_excel():
+    # Get all data
+    usuarios = _db_query_static("SELECT id, nombre, email, rol FROM usuarios ORDER BY id ASC")
+    salas = _db_query_static("SELECT id, nombre, capacidad, descripcion FROM salas ORDER BY id ASC")
+    reservas = _db_query_static("SELECT id, fecha, hora_inicio, hora_fin, usuario_id, sala_id FROM reservas ORDER BY id ASC")
+
+    # Create workbook
+    wb = Workbook()
+
+    # Usuarios sheet
+    ws_usuarios = wb.active
+    ws_usuarios.title = "Usuarios"
+    ws_usuarios.append(["ID", "Nombre", "Email", "Rol"])
+    for row in usuarios:
+        ws_usuarios.append(row)
+
+    # Salas sheet
+    ws_salas = wb.create_sheet("Salas")
+    ws_salas.append(["ID", "Nombre", "Capacidad", "Descripción"])
+    for row in salas:
+        ws_salas.append(row)
+
+    # Reservas sheet
+    ws_reservas = wb.create_sheet("Reservas")
+    ws_reservas.append(["ID", "Fecha", "Hora Inicio", "Hora Fin", "Usuario ID", "Sala ID"])
+    for row in reservas:
+        ws_reservas.append(row)
+
+    # Save to file
+    wb.save("frontend/coworking_data.xlsx")
+    print("Excel actualizado")
+
+# Helper function for static query
+def _db_query_static(query, params=()):
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        return rows
+    finally:
+        conn.close()
+
 print("Backend inicializado correctamente.")
+# Generate initial Excel
+generate_excel()
 
 class RequestHandler(SimpleHTTPRequestHandler):
     def _send_json(self, status_code: int, payload):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_excel(self, workbook):
+        buffer = BytesIO()
+        workbook.save(buffer)
+        buffer.seek(0)
+        body = buffer.getvalue()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        self.send_header("Content-Disposition", "attachment; filename=coworking_data.xlsx")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -98,6 +157,18 @@ class RequestHandler(SimpleHTTPRequestHandler):
             ]
             return self._send_json(200, reservas)
 
+        if self.path == "/coworking_data.xlsx":
+            try:
+                with open("coworking_data.xlsx", "rb") as f:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    self.send_header("Content-Disposition", "attachment; filename=coworking_data.xlsx")
+                    self.end_headers()
+                    self.wfile.write(f.read())
+            except FileNotFoundError:
+                self.send_error(404, "File not found")
+            return
+
         # Para todo lo demás, servir archivos estáticos del directorio actual
         return super().do_GET()
 
@@ -119,6 +190,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             except Exception as e:
                 return self._send_json(400, {"error": str(e)})
 
+            generate_excel()
             return self._send_json(201, {"id": new_id, "nombre": nombre, "email": email, "rol": rol})
 
         # Salas
@@ -139,6 +211,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 "INSERT INTO salas (nombre, capacidad, descripcion) VALUES (?, ?, ?)",
                 (nombre, cap_int, descripcion),
             )
+            generate_excel()
             return self._send_json(201, {"id": new_id, "nombre": nombre, "capacidad": cap_int, "descripcion": descripcion})
 
         # Reservas
@@ -187,6 +260,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             except Exception as e:
                 return self._send_json(400, {"error": str(e)})
 
+            generate_excel()
             return self._send_json(
                 201,
                 {
@@ -214,12 +288,18 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
             if recurso == 'usuarios':
                 count = self._db_execute_rowcount("DELETE FROM usuarios WHERE id = ?", (rid,))
+                if count:
+                    generate_excel()
                 return self._send_json(200 if count else 404, {"deleted": bool(count)})
             if recurso == 'salas':
                 count = self._db_execute_rowcount("DELETE FROM salas WHERE id = ?", (rid,))
+                if count:
+                    generate_excel()
                 return self._send_json(200 if count else 404, {"deleted": bool(count)})
             if recurso == 'reservas':
                 count = self._db_execute_rowcount("DELETE FROM reservas WHERE id = ?", (rid,))
+                if count:
+                    generate_excel()
                 return self._send_json(200 if count else 404, {"deleted": bool(count)})
 
         return self._send_json(404, {"error": "Ruta no encontrada"})
